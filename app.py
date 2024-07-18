@@ -39,6 +39,9 @@ def parse_order(df):
             start = None
             end = None
     df_orders = df_orders.reset_index(drop=True)
+    colnames = df_orders.columns
+    colnames = [colname.strip() for colname in colnames]
+    df_orders.columns = colnames
     return df_orders
 
 
@@ -62,6 +65,7 @@ if uploaded_file and uploaded_id_table:
     df_orders = parse_order(df)
     id_table = pd.read_excel(uploaded_id_table)
     id_table = id_table.iloc[:, :2]
+    id_table = id_table.drop_duplicates()
     id_table.columns = ['公司物料', '产品编号']
     
     toc.h3('处理后订单数据')
@@ -70,18 +74,16 @@ if uploaded_file and uploaded_id_table:
     toc.h3('物料对照表')
     st.table(id_table.head())
     
-    df_orders.columns = ['NO', '产品编号', '描述', '规格', '供方料号', '数量', '未税单价', '未税金额', '含税金额','交货日期']
     df_merged = df_orders.merge(id_table, on='产品编号', how='left')
     
     toc.h3('合并后数据')
     st.table(df_merged)
+    print(df_orders.head(40))
 
     toc.h3('保存合并后数据')
     # save as excel
-    df_xlsx = to_excel(df_merged)
-    st.download_button(label='📥 下载合并后数据',
-                                data=df_xlsx ,
-                                file_name= '合并后数据.xlsx')
+    st.download_button('下载合并后数据', to_excel(df_merged), '合并后数据.xlsx', 'xlsx')
+    
     
     # show items not found in id_table
     toc.h3('未找到的物料')
